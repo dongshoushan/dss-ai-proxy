@@ -1,0 +1,35 @@
+server:
+  port: 30089
+
+logging:
+  level:
+    com.dss.test.ai.proxy: INFO
+
+# ============================================================
+# AI代理配置说明
+# ============================================================
+# 生产环境请使用外部配置文件(/app/config/application.yml)
+#
+# 代理配置说明（非必填）：
+# - 如果当前部署环境可以直连谷歌(Google/Gemini API)，则不需要配置代理
+# - 如果当前部署环境需要通过代理访问外网，则需要配置以下代理参数：
+#   - proxy-host: 代理服务器地址
+#   - proxy-port: 代理服务器端口
+#   - proxy-username: 代理认证用户名（如代理不需要认证则不配置）
+#   - proxy-password: 代理认证密码（如代理不需要认证则不配置）
+#
+# 示例配置：
+# ai:
+#   proxy:
+#     target-base-url: https://generativelanguage.googleapis.com/v1beta/openai
+#     # 以下代理配置为非必填项，根据实际网络环境决定是否配置
+#     proxy-host: proxyuk.huawei.com
+#     proxy-port: 8080
+#     proxy-username: your-username
+#     proxy-password: your-password
+#     connect-timeout: 30000
+#     read-timeout: 120000
+#     gemini-api-keys:
+#       - your-api-key-1
+#       - your-api-key-2
+# ============================================================
