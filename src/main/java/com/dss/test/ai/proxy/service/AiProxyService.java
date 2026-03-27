@@ -29,25 +29,32 @@ public class AiProxyService {
     private final RestTemplate restTemplate;
     private final ProxyConfig proxyConfig;
     private final ApiKeyManager apiKeyManager;
+    private final ModelSwitchManager modelSwitchManager;
     
-    public AiProxyService(RestTemplate restTemplate, ProxyConfig proxyConfig, ApiKeyManager apiKeyManager) {
+    public AiProxyService(RestTemplate restTemplate, ProxyConfig proxyConfig, 
+                         ApiKeyManager apiKeyManager, ModelSwitchManager modelSwitchManager) {
         this.restTemplate = restTemplate;
         this.proxyConfig = proxyConfig;
         this.apiKeyManager = apiKeyManager;
+        this.modelSwitchManager = modelSwitchManager;
     }
     
     /**
      * 代理转发请求到目标AI服务
+     * 当请求失败时会自动切换到下一个模型并重试
      *
      * @param path 请求路径
      * @param headers 请求头
      * @param body 请求体(JSON字符串)
+     * @param currentModel 当前使用的模型名称
      * @return 目标服务的响应
      * @author dongshoushan
+     * @工号 dwx1402878
      */
-    public ResponseEntity<String> proxyRequest(String path, HttpHeaders headers, String body) {
+    public ResponseEntity<String> proxyRequest(String path, HttpHeaders headers, 
+                                              String body, String currentModel) {
         String targetUrl = buildTargetUrl(path);
-        log.info("代理请求到目标URL: {}", targetUrl);
+        log.info("代理请求到目标URL: {}, 使用模型: {}", targetUrl, currentModel);
         
         HttpHeaders proxyHeaders = buildProxyHeaders(headers);
         HttpEntity<String> entity = new HttpEntity<>(body, proxyHeaders);
@@ -63,7 +70,14 @@ public class AiProxyService {
             log.info("目标服务响应状态: {}", response.getStatusCode());
             return response;
         } catch (Exception e) {
-            log.error("代理请求失败, URL: {}, 错误: {}", targetUrl, e.getMessage(), e);
+            log.error("代理请求失败, URL: {}, 模型: {}, 错误: {}", 
+                     targetUrl, currentModel, e.getMessage(), e);
+            
+            // 切换到下一个模型
+            String nextModel = modelSwitchManager.switchToNextModel();
+            log.info("模型异常，已切换到下一个模型: {}", nextModel);
+            
+            // 抛出异常，让上层处理
             throw e;
         }
     }
