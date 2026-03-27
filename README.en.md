@@ -63,6 +63,13 @@ ai:
     gemini-api-keys:
       - your-api-key-1
       - your-api-key-2
+    # 模型列表(按顺序切换，第一个异常则使用第二个，以此类推)
+    models:
+      - gemini-3.1-flash-lite-preview
+      - gemini-3-flash-preview
+      - gemini-2.5-flash
+      - gemini-2.5-flash-lite
+
 ```
 
 ### Proxy Configuration
@@ -76,9 +83,9 @@ ai:
 
 ## API Key Configuration
 
-### Recommended Model
+### Model
 
-Recommended model: **gemini-3.1-flash-lite-preview**
+model: **gemini-3.1-flash-lite-preview**
 
 | Model | Category | RPM | TPM | RPD |
 |-------|----------|-----|-----|-----|
