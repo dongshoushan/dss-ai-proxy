@@ -1,6 +1,7 @@
 package com.dss.test.ai.proxy.controller;
 
 import com.dss.test.ai.proxy.service.AiProxyService;
+import com.dss.test.ai.proxy.service.ModelSwitchManager;
 import com.dss.test.ai.proxy.service.ThoughtSignatureManager;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,11 +34,14 @@ public class AiProxyController {
 
     private final AiProxyService aiProxyService;
     private final ThoughtSignatureManager signatureManager;
+    private final ModelSwitchManager modelSwitchManager;
 
     public AiProxyController(AiProxyService aiProxyService, 
-                           ThoughtSignatureManager signatureManager) {
+                           ThoughtSignatureManager signatureManager,
+                           ModelSwitchManager modelSwitchManager) {
         this.aiProxyService = aiProxyService;
         this.signatureManager = signatureManager;
+        this.modelSwitchManager = modelSwitchManager;
     }    
     /**
      * 代理chat completions接口
@@ -62,10 +66,15 @@ public class AiProxyController {
         // 移除store字段
         processedBody = removeStoreField(processedBody);
         
+        // 强制替换模型名称为当前模型
+        String currentModel = modelSwitchManager.getCurrentModel();
+        processedBody = modelSwitchManager.replaceModelInRequest(processedBody, currentModel);
+        log.info("已强制替换模型为: {}", currentModel);
+
         HttpHeaders httpHeaders = convertHeaders(headers);
 
         ResponseEntity<String> response = aiProxyService.proxyRequest(
-            CHAT_COMPLETIONS_PATH, httpHeaders, processedBody);
+            CHAT_COMPLETIONS_PATH, httpHeaders, processedBody, currentModel);
 
         // 从响应中提取thought_signature
         if (response.getBody() != null) {
