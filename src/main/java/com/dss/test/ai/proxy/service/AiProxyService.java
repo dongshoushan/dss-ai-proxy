@@ -42,6 +42,7 @@ public class AiProxyService {
     /**
      * 代理转发请求到目标AI服务
      * 当请求失败时会自动切换到下一个模型并重试
+     * 会尝试所有模型，直到成功或所有模型都失败
      *
      * @param path 请求路径
      * @param headers 请求头
@@ -73,13 +74,62 @@ public class AiProxyService {
             log.error("代理请求失败, URL: {}, 模型: {}, 错误: {}", 
                      targetUrl, currentModel, e.getMessage(), e);
             
+            // 切换到下一个模型并重试
+            return retryWithNextModel(path, headers, body, currentModel, e);
+        }
+    }
+    
+    /**
+     * 使用下一个模型重试请求
+     * 会尝试所有模型，直到成功或所有模型都失败
+     *
+     * @param path 请求路径
+     * @param headers 请求头
+     * @param body 请求体(JSON字符串)
+     * @param failedModel 失败的模型名称
+     * @param originalException 原始异常
+     * @return 目标服务的响应
+     * @author dongshoushan
+     * @工号 dwx1402878
+     */
+    private ResponseEntity<String> retryWithNextModel(String path, HttpHeaders headers, 
+                                                      String body, String failedModel, 
+                                                      Exception originalException) {
+        int modelCount = modelSwitchManager.getModelCount();
+        int retryCount = 0;
+        
+        while (retryCount < modelCount - 1) {
             // 切换到下一个模型
             String nextModel = modelSwitchManager.switchToNextModel();
-            log.info("模型异常，已切换到下一个模型: {}", nextModel);
+            log.info("模型 {} 异常，切换到下一个模型: {} 进行重试", failedModel, nextModel);
             
-            // 抛出异常，让上层处理
-            throw e;
+            // 替换请求体中的模型名称
+            String newBody = modelSwitchManager.replaceModelInRequest(body, nextModel);
+            
+            String targetUrl = buildTargetUrl(path);
+            HttpHeaders proxyHeaders = buildProxyHeaders(headers);
+            HttpEntity<String> entity = new HttpEntity<>(newBody, proxyHeaders);
+            
+            try {
+                ResponseEntity<String> response = restTemplate.exchange(
+                    targetUrl,
+                    HttpMethod.POST,
+                    entity,
+                    String.class
+                );
+                
+                log.info("使用模型 {} 重试成功, 响应状态: {}", nextModel, response.getStatusCode());
+                return response;
+            } catch (Exception e) {
+                log.error("使用模型 {} 重试失败: {}", nextModel, e.getMessage());
+                failedModel = nextModel;
+                retryCount++;
+            }
         }
+        
+        // 所有模型都失败，抛出原始异常
+        log.error("所有模型都已尝试失败，共尝试 {} 个模型", modelCount);
+        throw new RuntimeException("所有模型尝试失败", originalException);
     }
     
     /**
