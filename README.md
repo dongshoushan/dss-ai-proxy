@@ -63,6 +63,13 @@ ai:
     gemini-api-keys:
       - your-api-key-1
       - your-api-key-2
+    # 模型列表(按顺序切换，第一个异常则使用第二个，以此类推)
+    models:
+      - gemini-3.1-flash-lite-preview
+      - gemini-3-flash-preview
+      - gemini-2.5-flash
+      - gemini-2.5-flash-lite
+
 ```
 
 ### 代理配置说明
@@ -76,10 +83,10 @@ ai:
 
 ## API Key 配置建议
 
-### 推荐模型
+### 模型
 
-推荐使用 **gemini-3.1-flash-lite-preview** 模型，该模型配额如下：
-
+ **gemini-3.1-flash-lite-preview** 模型，该模型配额如下：
+其他模型说明自己参考谷歌说明即可
 | 模型 | 类别 | RPM | TPM | RPD |
 |------|------|-----|-----|-----|
 | Gemini 3.1 Flash Lite | 文本输出模型 | 15 | 250K | 500 |
